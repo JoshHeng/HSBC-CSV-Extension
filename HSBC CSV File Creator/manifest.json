@@ -1,0 +1,20 @@
+{
+    "name": "HSBC CSV File Creator",
+    "version": "1.1",
+    "description": "Creates a CSV statement file from a HSBC account page",
+    "permissions": ["declarativeContent", "storage", "activeTab"],
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": false
+    },
+    "page_action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "128": "icon128.png"
+        }
+    },
+    "icons": {
+        "128": "icon128.png"
+    },
+    "manifest_version": 2
+  }
