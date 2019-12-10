@@ -2,39 +2,87 @@ startDate = undefined;
 endDate = undefined;
 lastAcountNumber = undefined;
 
-chrome.storage.local.get(['filterByDate', 'startDate', 'endDate'], function(data) {
+chrome.storage.local.get(['filterByDate', 'startDate', 'endDate', 'mode'], function(data) {
     if (data['filterByDate']) {
         startDate = new Date(data['startDate']);
         endDate = new Date(data['endDate']);
         startDate.setHours(0);
         endDate.setHours(0);
     }
-    
-    ClickViewMore();
+    mode = data['mode'];
+    if (mode == undefined) mode = 0; //Mode: 0 (disabled), 1 (dashboard), 2 (statement viewer)
+
+    if (mode == 1) {
+        ClickViewMore(function() {
+            GetTransactions(true, function(transactions) {
+                GetAccountNumber(true, transactions, function(transactions, accountNumber) {
+                    DownloadCsv(transactions, accountNumber);
+                });
+            });
+        });
+    }
+    else if (mode == 2) {
+        GetTransactions(false, function(transactions) {
+            GetAccountNumber(false, transactions, function(transactions, accountNumber) {
+                DownloadCsv(transactions, accountNumber);
+            });
+        });
+    }
 });
 
-function ClickViewMore() {
-        if (!document.getElementsByClassName('viewMoreBtn')[0].classList.contains('noDisplay')) {
-            document.getElementsByClassName('viewMoreBtn')[0].click();
-            setTimeout(ClickViewMore, 500);
-        }
+function ClickViewMore(callback) {
+    if (!document.getElementsByClassName('viewMoreBtn')[0].classList.contains('noDisplay')) {
+        document.getElementsByClassName('viewMoreBtn')[0].click();
+        setTimeout(ClickViewMore, 500);
+    }
     else {
-        GetTransactions();
+        callback();
     }
 }
 
-function GetTransactions() {
-    table = document.getElementById('_dapTransactionGrid').childNodes[0].childNodes[0].childNodes[2].childNodes[1];
+function GetTransactions(dashboard, callback) {
+    table = undefined
+    if (dashboard) {
+        table = document.getElementById('_dapTransactionGrid').childNodes[0].childNodes[0].childNodes[2].childNodes[1];
+    }
+    else {
+        table = document.getElementsByClassName('gridxMain')[0].childNodes[1];
+    }
+    
     transactions = [];
-    for (i=0; i < table.childNodes.length; i++) {
-        row = table.childNodes[i];
+    for (i=1; i < table.childNodes.length - 1; i++) {
+        row = table.childNodes[i].childNodes[0].childNodes[0].childNodes[0];
+        transaction = ""
 
-        date = new Date(row.childNodes[0].childNodes[0].childNodes[0].childNodes[0].innerText.substring(5));
-        sender = row.childNodes[0].childNodes[0].childNodes[0].childNodes[1].childNodes[1].innerText;
-        reference = row.childNodes[0].childNodes[0].childNodes[0].childNodes[1].childNodes[2].innerText;
-        amount = parseFloat(row.childNodes[0].childNodes[0].childNodes[0].childNodes[2].innerText.substring(7).replace(/,/g, ''));
-        balance = parseFloat(row.childNodes[0].childNodes[0].childNodes[0].childNodes[3].innerText.substring(8).replace(/,/g, ''));
-        transaction = [date.toLocaleDateString('en-GB'), sender + " - " + reference, amount, balance];
+        if (dashboard) {
+            date = new Date(row.childNodes[0].childNodes[0].innerText.substring(5));
+
+            reference = ""
+            referenceElements = row.childNodes[0].childNodes[1].childNodes;
+            for (x=1; x < referenceElements.length; x++) {
+                if (x > 1) reference += " - ";
+                reference += referenceElements[x].innerText;
+            }
+
+            amount = parseFloat(row.childNodes[0].childNodes[2].innerText.substring(7).replace(/,/g, ''));
+            balance = parseFloat(row.childNodes[0].childNodes[3].innerText.substring(8).replace(/,/g, ''));
+            transaction = [date.toLocaleDateString('en-GB'), reference, amount, balance];
+        }
+        else {
+            date = new Date(row.childNodes[0].innerText.substring(5));
+
+            reference = ""
+            referenceElements = row.childNodes[1].childNodes;
+            for (x=1; x < referenceElements.length; x++) {
+                if (x > 1) reference += " - ";
+                reference += referenceElements[x].innerText;
+            }
+
+            amount = parseFloat(row.childNodes[2].innerText.substring(7).replace(/,/g, ''));
+            balance = parseFloat(row.childNodes[3].innerText.substring(8).replace(/,/g, ''));
+            transaction = [date.toLocaleDateString('en-GB'), reference, amount, balance];
+        }
+        
 
         if (startDate != undefined && endDate != undefined) {
             if (date >= startDate && endDate >= date) {
@@ -47,12 +95,21 @@ function GetTransactions() {
     }
     transactions = transactions.reverse();
 
-    //Get last account number
-    lastAccountNumber = document.getElementById('_dapAccountSnapshot').childNodes[0].childNodes[7].childNodes[3].innerText.substring(8).substring(5, 9);
-    
-    DownloadCsv(transactions);
+    callback(transactions);
 }
-function DownloadCsv(transactions) {
+
+function GetAccountNumber(dashboard, passThrough, callback) {
+    if (dashboard) {
+        accountNumber = document.getElementById('_dapAccountSnapshot').childNodes[0].childNodes[7].childNodes[3].innerText.substring(8).substring(5, 9);
+    }
+    else {
+        console.log(document.getElementsByClassName('loanDetailsWrapper')[0].childNodes);
+        accountNumber = document.getElementsByClassName('loanDetailsWrapper')[0].childNodes[3].innerText.substring(8).substring(5, 9);
+    }
+
+    callback(passThrough, accountNumber);
+}
+function DownloadCsv(transactions, accountNumber) {
     var csv = ["Date,Description,Amount,Balance"];
 
     for (i = 0; i < transactions.length; i++) {
@@ -60,8 +117,8 @@ function DownloadCsv(transactions) {
     }
 
     var name = 'HSBC Statement';
-    if (lastAccountNumber != undefined) {
-        name += ' ' + lastAccountNumber;
+    if (accountNumber != undefined) {
+        name += ' ' + accountNumber;
     }
     if (startDate != undefined && endDate != undefined) {
         name += ' - ' + startDate.getFullYear() + (startDate.getMonth()+1) + startDate.getDate() + ' ' + endDate.getFullYear() + (endDate.getMonth()+1) + endDate.getDate();
@@ -74,4 +131,3 @@ function DownloadCsv(transactions) {
     hiddenElement.download = name;
     hiddenElement.click();
 }
-

@@ -13,10 +13,17 @@
     .hidden {
         display: none;
     }
+    #status {
+        text-align: center;
+    }
     </style>
 </head>
 <body>
-    <form>
+    <div id="status">
+        <b id="status-text">Invalid Page!</b>
+        <br>
+    </div>
+    <form id="form" class="hidden">
         <div style="margin-bottom: 0.5rem;">
             <label for="filterByDate">Filter By Date</label>
             <input type="checkbox" id="filterByDate" name="filterByDate">

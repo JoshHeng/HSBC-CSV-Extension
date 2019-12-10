@@ -1,8 +1,8 @@
 {
     "name": "HSBC CSV File Creator",
-    "version": "1.1",
+    "version": "2",
     "description": "Creates a CSV statement file from a HSBC account page",
-    "permissions": ["declarativeContent", "storage", "activeTab"],
+    "permissions": ["declarativeContent", "storage", "activeTab", "tabs"],
     "background": {
         "scripts": ["background.js"],
         "persistent": false

@@ -6,6 +6,37 @@ downloadCsv.onclick = function(element) {
     });
   };
 
+function CheckPage() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        var pageValid = false
+
+        var path = tabs[0].url;
+        path = path.split('?');
+        if (path[0] == "https://www.services.online-banking.hsbc.co.uk/gpib/group/gpib/cmn/layouts/default.html") {
+            var pageId = path[1].split('=')[1];
+            
+            if (pageId == "dashboard") {
+                document.getElementById("status-text").innerText = "Dashboard";
+                document.getElementById("form").classList.remove("hidden");
+                chrome.storage.local.set({'mode': 1});
+                pageValid = true;
+            }
+            else if (pageId == "viewStatements") {
+                document.getElementById("status-text").innerText = "Statement Viewer";
+                document.getElementById("form").classList.remove("hidden");
+                chrome.storage.local.set({'mode': 2});
+                pageValid = true;
+            }
+        }
+
+        if (!pageValid) {
+            //Mode: 0 (disabled), 1 (dashboard), 2 (statement viewer)
+            chrome.storage.local.set({'mode': 0});
+        }
+      });
+}
+
+
 function UpdateDates() {
     elements = document.getElementsByClassName('date');
 
@@ -53,3 +84,5 @@ chrome.storage.local.get(['filterByDate', 'startDate', 'endDate'], function(data
     }
 });
 UpdateDates();
+
+CheckPage();
