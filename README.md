@@ -1,6 +1,10 @@
 # HSBC CSV Extension
+
+> NOTE: Due to recent updates, this extension does not work anymore. You can how download your statement as a CSV file by clicking the 'Download'/'Export' button at the bottom of the statement page
+
 This Chrome extension scrapes a HSBC UK bank account page to produce a CSV file with all the transactions within a certain date
 It is available on the Chrome store [here](https://to.joshheng.co.uk/hsbccsvextension)
+
 ---
 ## Usage
 Install the extension from the Google Web Store
